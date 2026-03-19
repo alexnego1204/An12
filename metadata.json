@@ -1,0 +1,7 @@
+{
+  "name": "Alex Nego 12 Fitness - Avaliação Física",
+  "description": "Plataforma profissional de avaliação física e performance por Alex Nego 12 Fitness.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
