@@ -38,6 +38,41 @@ export interface AssessmentResults {
   sumSkinfolds?: number;
 }
 
+export interface Workout {
+  title: string;
+  description: string;
+  schedule: {
+    dayName: string;
+    focus: string;
+    exercises: {
+      name: string;
+      sets: string;
+      reps: string;
+      notes?: string;
+    }[];
+  }[];
+  recommendations: string[];
+}
+
+export interface Diet {
+  title: string;
+  description: string;
+  macros: {
+    protein: string;
+    carbs: string;
+    fats: string;
+    calories: string;
+  };
+  meals: {
+    name: string;
+    time?: string;
+    items: string[];
+  }[];
+  tips: string[];
+}
+
 export interface AssessmentEntry extends AssessmentData {
   results: AssessmentResults;
+  workout?: Workout;
+  diet?: Diet;
 }

@@ -1,6 +1,6 @@
 {
   "name": "Alex Nego 12 Fitness - Avaliação Física",
-  "description": "Plataforma profissional de avaliação física e performance por Alex Nego 12 Fitness.",
+  "description": "Plataforma profissional de avaliação física, performance e geração de treinos e dietas por IA por Alex Nego 12 Fitness.",
   "requestFramePermissions": [
     "camera"
   ]

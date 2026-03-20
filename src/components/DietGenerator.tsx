@@ -1,27 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
-import { AssessmentEntry } from '../types';
+import { AssessmentEntry, Diet } from '../types';
 import { generateDiet } from '../services/geminiService';
 import { exportToPdf } from '../utils/pdfExport';
 
 interface Props {
   assessment: AssessmentEntry;
+  onUpdate: (diet: Diet) => void;
 }
 
-const DietGenerator: React.FC<Props> = ({ assessment }) => {
-  const [diet, setDiet] = useState<any>(null);
+const DietGenerator: React.FC<Props> = ({ assessment, onUpdate }) => {
+  const [diet, setDiet] = useState<Diet | null>(assessment.diet || null);
   const [loading, setLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [goal, setGoal] = useState<string>('Perda de gordura');
   const [restrictions, setRestrictions] = useState<string>('');
-  const [showGoalSelector, setShowGoalSelector] = useState(true);
+  const [showGoalSelector, setShowGoalSelector] = useState(!assessment.diet);
 
   useEffect(() => {
-    setDiet(null);
-    setShowGoalSelector(true);
+    setDiet(assessment.diet || null);
+    setShowGoalSelector(!assessment.diet);
     setError(null);
-  }, [assessment.id]);
+  }, [assessment.id, assessment.diet]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -30,8 +31,12 @@ const DietGenerator: React.FC<Props> = ({ assessment }) => {
     try {
       const data = await generateDiet(assessment, goal, restrictions);
       setDiet(data);
-    } catch (err) {
-      setError("Não foi possível gerar a dieta no momento.");
+      onUpdate(data);
+    } catch (err: any) {
+      const message = err.message?.includes("API Key") 
+        ? "Configuração Necessária: A chave da API Gemini não foi encontrada. Por favor, adicione GEMINI_API_KEY nos Segredos (ícone de engrenagem)."
+        : "Não foi possível gerar a dieta no momento. Tente novamente em instantes.";
+      setError(message);
       setShowGoalSelector(true);
     } finally {
       setLoading(false);
@@ -133,21 +138,37 @@ const DietGenerator: React.FC<Props> = ({ assessment }) => {
         </div>
       ) : diet ? (
         <div className="space-y-8">
-          <div id="diet-plan-content" className="space-y-8 p-1">
-            <div className="p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+          <div id="diet-plan-content" className="space-y-8 p-1 relative">
+            {/* Watermark */}
+            <div className="pdf-watermark" />
+
+            {/* Professional PDF Header */}
+            <div className="hidden pdf-only flex-col items-center text-center border-b-2 border-slate-900 dark:border-white pb-6 mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-slate-900 dark:bg-white rounded-lg">
+                  <svg className="w-8 h-8 text-white dark:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                  </svg>
+                </div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter">Alex Nego 12 <span className="text-emerald-600">Fitness</span></h1>
+              </div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.3em]">Consultoria Esportiva & Performance</p>
+            </div>
+
+            <div className="p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 relative z-10">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-xl font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">{diet.title}</h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{diet.description}</p>
                 </div>
                 <div className="hidden pdf-only flex-col items-end">
-                  <span className="text-[10px] font-black text-slate-400 uppercase">Alex Nego 12 Fitness</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Plano Alimentar</span>
                   <span className="text-[8px] text-slate-400">{new Date().toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
               <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 text-center">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Calorias</p>
                 <p className="text-lg font-black text-emerald-600">{diet.macros.calories}</p>
@@ -166,7 +187,7 @@ const DietGenerator: React.FC<Props> = ({ assessment }) => {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 relative z-10">
               {diet.meals.map((meal: any, i: number) => (
                 <div key={i} className="space-y-3 break-inside-avoid">
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
@@ -185,7 +206,7 @@ const DietGenerator: React.FC<Props> = ({ assessment }) => {
               ))}
             </div>
 
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 break-inside-avoid">
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 break-inside-avoid relative z-10">
               <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Dicas e Suplementação</h4>
               <ul className="space-y-3">
                 {diet.tips.map((tip: string, i: number) => (
@@ -196,9 +217,15 @@ const DietGenerator: React.FC<Props> = ({ assessment }) => {
                 ))}
               </ul>
             </div>
+
+            {/* Professional PDF Footer */}
+            <div className="hidden pdf-only flex-col items-center text-center pt-8 border-t border-slate-100 dark:border-slate-800 mt-12">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Alex Nego 12 Fitness</p>
+              <p className="text-[8px] text-slate-400">Este documento é um guia nutricional personalizado e deve ser acompanhado por um nutricionista.</p>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 no-print">
             <button
               onClick={handleExportPdf}
               disabled={isExporting}

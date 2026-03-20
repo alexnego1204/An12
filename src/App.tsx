@@ -148,6 +148,13 @@ const App: React.FC = () => {
   const [prefillName, setPrefillName] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'report' | 'workout' | 'diet'>('report');
 
+  const updateCurrentAssessment = (updatedEntry: AssessmentEntry) => {
+    setCurrentAssessment(updatedEntry);
+    const newHistory = history.map(h => h.id === updatedEntry.id ? updatedEntry : h);
+    setHistory(newHistory);
+    localStorage.setItem('fitcheck_history', JSON.stringify(newHistory));
+  };
+
   const handleCalculate = (data: AssessmentData) => {
     const results = calculateResults(data);
     const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9);
@@ -186,7 +193,8 @@ const App: React.FC = () => {
       return;
     }
     setIsExporting(true);
-    const filename = `Relatorio_AN12_${currentAssessment.name.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
+    const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+    const filename = `${currentAssessment.name.replace(/\s+/g, '_')}_${dateStr}`;
     await exportToPdf('report-content', filename);
     setIsExporting(false);
   };
@@ -274,7 +282,7 @@ const App: React.FC = () => {
                       <Download className="w-4 h-4" />
                     )}
                   </div>
-                  {isExporting ? 'Gerando Relatório...' : 'Gerar Relatório PDF'}
+                  {isExporting ? 'Gerando Relatório...' : 'Exportar para PDF'}
                 </button>
 
                 <button 
@@ -379,8 +387,24 @@ const App: React.FC = () => {
 
           <div className="lg:col-span-2 space-y-8 order-2 lg:order-2">
             {currentAssessment ? (
-              <div id="report-content" className="space-y-6 sm:space-y-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div id="report-content" className="space-y-6 sm:space-y-8 relative">
+                {/* Watermark */}
+                <div className="pdf-watermark" />
+
+                {/* Professional PDF Header */}
+                <div className="hidden pdf-only flex-col items-center text-center border-b-2 border-slate-900 dark:border-white pb-6 mb-8">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-slate-900 dark:bg-white rounded-lg">
+                      <svg className="w-8 h-8 text-white dark:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h1 className="text-3xl font-black uppercase tracking-tighter">Alex Nego 12 <span className="text-orange-600">Fitness</span></h1>
+                  </div>
+                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.3em]">Consultoria Esportiva & Performance</p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 relative z-10">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Relatório de Performance</h2>
                     <p className="text-slate-500 dark:text-slate-400 text-sm">Cliente: <span className="font-bold text-slate-700 dark:text-slate-200">{currentAssessment.name}</span> • {new Date(currentAssessment.date).toLocaleDateString()}</p>
@@ -388,7 +412,7 @@ const App: React.FC = () => {
                   <div className="self-start sm:self-center px-3 py-1 bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-400 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors">Relatório Oficial</div>
                 </div>
 
-                <div className="flex bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-x-auto no-scrollbar">
+                <div className="flex bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-x-auto no-scrollbar no-print relative z-10">
                   <button
                     onClick={() => setActiveTab('report')}
                     className={`flex-1 py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap flex items-center justify-center gap-2 ${
@@ -431,6 +455,7 @@ const App: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
+                    className="relative z-10"
                   >
                     {activeTab === 'report' && (
                       <div className="space-y-8">
@@ -440,14 +465,26 @@ const App: React.FC = () => {
                     )}
 
                     {activeTab === 'workout' && (
-                      <WorkoutGenerator assessment={currentAssessment} />
+                      <WorkoutGenerator 
+                        assessment={currentAssessment} 
+                        onUpdate={(workout) => updateCurrentAssessment({ ...currentAssessment, workout })}
+                      />
                     )}
 
                     {activeTab === 'diet' && (
-                      <DietGenerator assessment={currentAssessment} />
+                      <DietGenerator 
+                        assessment={currentAssessment} 
+                        onUpdate={(diet) => updateCurrentAssessment({ ...currentAssessment, diet })}
+                      />
                     )}
                   </motion.div>
                 </AnimatePresence>
+
+                {/* Professional PDF Footer */}
+                <div className="hidden pdf-only flex-col items-center text-center pt-8 border-t border-slate-100 dark:border-slate-800 mt-12">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Alex Nego 12 Fitness</p>
+                  <p className="text-[8px] text-slate-400">Este relatório é confidencial e destinado exclusivamente ao cliente mencionado.</p>
+                </div>
               </div>
             ) : (
               <div className="h-[300px] sm:h-[500px] flex flex-col items-center justify-center text-center p-6 sm:p-12 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 transition-colors duration-300">

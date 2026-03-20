@@ -32,9 +32,75 @@ body {
   background: #334155;
 }
 
-/* PWA specific tweaks */
-@media all and (display-mode: standalone) {
-  body {
-    user-select: none;
-  }
+/* Utility classes */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* PDF Export Styles */
+.pdf-only {
+  display: none !important;
+}
+
+.pdf-printing .pdf-only {
+  display: flex !important;
+}
+
+.pdf-printing button,
+.pdf-printing .no-print {
+  display: none !important;
+}
+
+.pdf-printing {
+  background: white !important;
+  color: black !important;
+  overflow: visible !important;
+  height: auto !important;
+  width: 1024px !important; /* Fixed width for consistent export */
+  max-width: none !important;
+  position: relative;
+}
+
+.dark .pdf-printing {
+  background: #020617 !important;
+  color: white !important;
+}
+
+/* Watermark Style */
+.pdf-watermark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  display: none;
+  overflow: hidden;
+  opacity: 0.03;
+  user-select: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Ctext x='50%25' y='50%25' font-size='40' font-weight='900' fill='black' transform='rotate(-45, 250, 250)' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif'%3EALEX NEGO 12 FITNESS%3C/text%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+.pdf-printing .pdf-watermark {
+  display: block;
+}
+
+/* PDF Export Fixes for html2canvas */
+.pdf-printing .bg-clip-text {
+  background-clip: border-box !important;
+  -webkit-background-clip: border-box !important;
+  color: inherit !important;
+  background: none !important;
+  text-fill-color: initial !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.pdf-printing .text-transparent {
+  color: currentColor !important;
 }

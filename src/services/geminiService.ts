@@ -7,10 +7,11 @@ let aiInstance: GoogleGenAI | null = null;
 const getAi = () => {
   if (!aiInstance) {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.warn("GEMINI_API_KEY is not defined. AI features will not work.");
+    if (!apiKey || apiKey === "undefined" || apiKey === "") {
+      console.error("GEMINI_API_KEY is not defined. AI features will not work.");
+      throw new Error("API Key da Gemini não configurada. Por favor, adicione GEMINI_API_KEY aos Segredos (ícone de engrenagem).");
     }
-    aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
+    aiInstance = new GoogleGenAI({ apiKey });
   }
   return aiInstance;
 };
@@ -45,7 +46,7 @@ export const getAiInsights = async (assessment: AssessmentEntry, previousAssessm
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-flash-latest',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -62,7 +63,7 @@ export const getAiInsights = async (assessment: AssessmentEntry, previousAssessm
       }
     });
 
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("Erro ao gerar insights:", error);
     throw error;
@@ -95,7 +96,7 @@ export const generateWorkout = async (assessment: AssessmentEntry, level: string
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-pro-preview',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -135,7 +136,7 @@ export const generateWorkout = async (assessment: AssessmentEntry, level: string
       }
     });
 
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("Erro ao gerar treino:", error);
     throw error;
@@ -169,7 +170,7 @@ export const generateDiet = async (assessment: AssessmentEntry, goal: string, re
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-pro-preview',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -207,7 +208,7 @@ export const generateDiet = async (assessment: AssessmentEntry, goal: string, re
       }
     });
 
-    return JSON.parse(response.text);
+    return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("Erro ao gerar dieta:", error);
     throw error;

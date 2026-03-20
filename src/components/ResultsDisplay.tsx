@@ -190,6 +190,38 @@ const ResultsDisplay: React.FC<Props> = ({ assessment, history }) => {
           </div>
         </div>
       </div>
+
+      {(previousAssessment?.workout || previousAssessment?.diet) && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight mb-4">Prescrições da Avaliação Anterior</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {previousAssessment.workout && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 bg-blue-600 rounded-lg text-white">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  </div>
+                  <h4 className="text-xs font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">Treino Anterior</h4>
+                </div>
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{previousAssessment.workout.title}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">{previousAssessment.workout.description.substring(0, 100)}...</p>
+              </div>
+            )}
+            {previousAssessment.diet && (
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 bg-emerald-600 rounded-lg text-white">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
+                  </div>
+                  <h4 className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Dieta Anterior</h4>
+                </div>
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{previousAssessment.diet.title}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Calorias: {previousAssessment.diet.macros.calories} • Proteínas: {previousAssessment.diet.macros.protein}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

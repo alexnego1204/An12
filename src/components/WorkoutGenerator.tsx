@@ -1,28 +1,29 @@
 
 import React, { useState, useEffect } from 'react';
-import { AssessmentEntry } from '../types';
+import { AssessmentEntry, Workout } from '../types';
 import { generateWorkout } from '../services/geminiService';
 import { exportToPdf } from '../utils/pdfExport';
 
 interface Props {
   assessment: AssessmentEntry;
+  onUpdate: (workout: Workout) => void;
 }
 
-const WorkoutGenerator: React.FC<Props> = ({ assessment }) => {
-  const [workout, setWorkout] = useState<any>(null);
+const WorkoutGenerator: React.FC<Props> = ({ assessment, onUpdate }) => {
+  const [workout, setWorkout] = useState<Workout | null>(assessment.workout || null);
   const [loading, setLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [level, setLevel] = useState<string>('Iniciante');
   const [daysPerWeek, setDaysPerWeek] = useState<number>(3);
   const [style, setStyle] = useState<string>('Full Body');
-  const [showGoalSelector, setShowGoalSelector] = useState(true);
+  const [showGoalSelector, setShowGoalSelector] = useState(!assessment.workout);
 
   useEffect(() => {
-    setWorkout(null);
-    setShowGoalSelector(true);
+    setWorkout(assessment.workout || null);
+    setShowGoalSelector(!assessment.workout);
     setError(null);
-  }, [assessment.id]);
+  }, [assessment.id, assessment.workout]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -31,8 +32,12 @@ const WorkoutGenerator: React.FC<Props> = ({ assessment }) => {
     try {
       const data = await generateWorkout(assessment, level, daysPerWeek, style);
       setWorkout(data);
-    } catch (err) {
-      setError("Não foi possível gerar o treino no momento.");
+      onUpdate(data);
+    } catch (err: any) {
+      const message = err.message?.includes("API Key") 
+        ? "Configuração Necessária: A chave da API Gemini não foi encontrada. Por favor, adicione GEMINI_API_KEY nos Segredos (ícone de engrenagem)."
+        : "Não foi possível gerar o treino no momento. Tente novamente em instantes.";
+      setError(message);
       setShowGoalSelector(true);
     } finally {
       setLoading(false);
@@ -154,21 +159,37 @@ const WorkoutGenerator: React.FC<Props> = ({ assessment }) => {
         </div>
       ) : workout ? (
         <div className="space-y-8">
-          <div id="workout-plan-content" className="space-y-8 p-1">
-            <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+          <div id="workout-plan-content" className="space-y-8 p-1 relative">
+            {/* Watermark */}
+            <div className="pdf-watermark" />
+
+            {/* Professional PDF Header */}
+            <div className="hidden pdf-only flex-col items-center text-center border-b-2 border-slate-900 dark:border-white pb-6 mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-slate-900 dark:bg-white rounded-lg">
+                  <svg className="w-8 h-8 text-white dark:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter">Alex Nego 12 <span className="text-blue-600">Fitness</span></h1>
+              </div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.3em]">Consultoria Esportiva & Performance</p>
+            </div>
+
+            <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/30 relative z-10">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-xl font-black text-blue-700 dark:text-blue-400 uppercase tracking-tight">{workout.title}</h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">{workout.description}</p>
                 </div>
                 <div className="hidden pdf-only flex-col items-end">
-                  <span className="text-[10px] font-black text-slate-400 uppercase">Alex Nego 12 Fitness</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Relatório de Treino</span>
                   <span className="text-[8px] text-slate-400">{new Date().toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-8 relative z-10">
               {workout.schedule.map((day: any, i: number) => (
                 <div key={i} className="space-y-4 break-inside-avoid">
                   <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-2">
@@ -194,7 +215,7 @@ const WorkoutGenerator: React.FC<Props> = ({ assessment }) => {
               ))}
             </div>
 
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 break-inside-avoid">
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 break-inside-avoid relative z-10">
               <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Recomendações de Sucesso</h4>
               <ul className="space-y-3">
                 {workout.recommendations.map((rec: string, i: number) => (
@@ -205,9 +226,15 @@ const WorkoutGenerator: React.FC<Props> = ({ assessment }) => {
                 ))}
               </ul>
             </div>
+
+            {/* Professional PDF Footer */}
+            <div className="hidden pdf-only flex-col items-center text-center pt-8 border-t border-slate-100 dark:border-slate-800 mt-12">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Alex Nego 12 Fitness</p>
+              <p className="text-[8px] text-slate-400">Este documento é um guia personalizado e deve ser acompanhado por um profissional.</p>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 no-print">
             <button
               onClick={handleExportPdf}
               disabled={isExporting}

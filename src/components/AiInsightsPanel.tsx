@@ -24,8 +24,11 @@ const AiInsightsPanel: React.FC<Props> = ({ assessment, history }) => {
       try {
         const data = await getAiInsights(assessment, previousAssessment);
         setInsights(data);
-      } catch (err) {
-        setError("Não foi possível carregar os insights da IA no momento.");
+      } catch (err: any) {
+        const message = err.message?.includes("API Key") 
+          ? "Configuração Necessária: A chave da API Gemini não foi encontrada. Por favor, adicione GEMINI_API_KEY nos Segredos (ícone de engrenagem)."
+          : "Não foi possível carregar os insights da IA no momento.";
+        setError(message);
       } finally {
         setLoading(false);
       }
